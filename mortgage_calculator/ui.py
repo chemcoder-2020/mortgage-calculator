@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QFormLayout,
+    QMainWindow, QWidget, QVBoxLayout, QFormLayout, QHBoxLayout,
     QLabel, QDoubleSpinBox, QComboBox, QPushButton, QMessageBox
 )
 from .calculator import calculate_down_payment
@@ -42,10 +42,11 @@ class MortgageCalculatorApp(QMainWindow):
         self.loan_term_input.addItems(["30", "20", "15", "10"])
 
         self.property_tax_input = QDoubleSpinBox()
-        self.property_tax_input.setRange(0, 1_000_000)
-        self.property_tax_input.setValue(6000)
-        self.property_tax_input.setPrefix("$ ")
         self.property_tax_input.setGroupSeparatorShown(True)
+        self.property_tax_type_input = QComboBox()
+        self.property_tax_type_input.addItems(["$", "%"])
+        self._update_property_tax_input_style()
+
 
         self.home_insurance_input = QDoubleSpinBox()
         self.home_insurance_input.setRange(0, 1_000_000)
@@ -68,7 +69,12 @@ class MortgageCalculatorApp(QMainWindow):
         form_layout.addRow("Target Monthly Payment:", self.target_payment_input)
         form_layout.addRow("Interest Rate (Annual):", self.interest_rate_input)
         form_layout.addRow("Loan Term (Years):", self.loan_term_input)
-        form_layout.addRow("Property Tax (Annual):", self.property_tax_input)
+
+        property_tax_layout = QHBoxLayout()
+        property_tax_layout.addWidget(self.property_tax_input)
+        property_tax_layout.addWidget(self.property_tax_type_input)
+        form_layout.addRow("Property Tax (Annual):", property_tax_layout)
+
         form_layout.addRow("Home Insurance (Annual):", self.home_insurance_input)
         form_layout.addRow("HOA Fees (Monthly):", self.hoa_fees_input)
         form_layout.addRow("PMI Rate (Annual):", self.pmi_rate_input)
@@ -87,15 +93,34 @@ class MortgageCalculatorApp(QMainWindow):
 
     def _connect_signals(self):
         self.calculate_button.clicked.connect(self.perform_calculation)
+        self.property_tax_type_input.currentTextChanged.connect(self._update_property_tax_input_style)
+
+    def _update_property_tax_input_style(self):
+        if self.property_tax_type_input.currentText() == "$":
+            self.property_tax_input.setPrefix("$ ")
+            self.property_tax_input.setSuffix("")
+            self.property_tax_input.setRange(0, 1_000_000)
+            self.property_tax_input.setValue(6000)
+        else: # "%"
+            self.property_tax_input.setPrefix("")
+            self.property_tax_input.setSuffix(" %")
+            self.property_tax_input.setRange(0, 100)
+            self.property_tax_input.setValue(1.2)
 
     def perform_calculation(self):
         try:
+            property_tax_value = self.property_tax_input.value()
+            if self.property_tax_type_input.currentText() == "%":
+                property_tax_amount = (property_tax_value / 100) * self.home_price_input.value()
+            else: # "$"
+                property_tax_amount = property_tax_value
+
             down_payment, down_payment_percent = calculate_down_payment(
                 home_price=self.home_price_input.value(),
                 target_monthly_payment=self.target_payment_input.value(),
                 interest_rate=self.interest_rate_input.value(),
                 loan_term_years=int(self.loan_term_input.currentText()),
-                property_tax=self.property_tax_input.value(),
+                property_tax=property_tax_amount,
                 home_insurance=self.home_insurance_input.value(),
                 hoa_fees=self.hoa_fees_input.value(),
                 pmi_rate=self.pmi_rate_input.value(),
