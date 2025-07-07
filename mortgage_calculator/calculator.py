@@ -90,3 +90,58 @@ def calculate_down_payment(
         return down_payment_at_20_percent, 20.0
 
     return down_payment_with_pmi, down_payment_percentage_with_pmi
+
+
+def calculate_time_to_save(
+    target_savings: float,
+    initial_savings: float,
+    monthly_contribution: float,
+    annual_interest_rate: float,
+) -> int:
+    """
+    Calculates the time in months to save for a target amount.
+
+    Args:
+        target_savings: The target savings amount (e.g., down payment).
+        initial_savings: The current amount of savings.
+        monthly_contribution: The amount saved each month.
+        annual_interest_rate: The annual interest rate of the savings account (as a percentage).
+
+    Returns:
+        The time in months to reach the target savings.
+
+    Raises:
+        ValueError: If the savings goal is not achievable.
+    """
+    if initial_savings >= target_savings:
+        return 0
+
+    # Handle case with no interest
+    if annual_interest_rate == 0:
+        if monthly_contribution <= 0:
+            raise ValueError("With no interest and no monthly savings, goal is unreachable.")
+        months = (target_savings - initial_savings) / monthly_contribution
+        return math.ceil(months)
+
+    monthly_rate = annual_interest_rate / 100 / 12
+
+    # If monthly contributions are not enough to grow the principal
+    if monthly_contribution + initial_savings * monthly_rate <= 0:
+        raise ValueError("Savings will not grow with the current monthly contribution.")
+
+    try:
+        # Using formula: n = log((PMT + FV*i) / (PMT + PV*i)) / log(1+i)
+        numerator = monthly_contribution + target_savings * monthly_rate
+        denominator = monthly_contribution + initial_savings * monthly_rate
+
+        if denominator <= 0:
+            raise ValueError("Savings will deplete over time.")
+
+        if (numerator / denominator) <= 1:
+            raise ValueError("Savings goal is not achievable with current parameters.")
+
+        months = math.log(numerator / denominator) / math.log(1 + monthly_rate)
+    except (ValueError, ZeroDivisionError):
+        raise ValueError("Calculation failed. Please check savings parameters.")
+
+    return math.ceil(months)

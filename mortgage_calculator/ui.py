@@ -1,14 +1,14 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QFormLayout, QHBoxLayout,
-    QLabel, QDoubleSpinBox, QComboBox, QPushButton, QMessageBox
+    QLabel, QDoubleSpinBox, QComboBox, QPushButton, QMessageBox, QFrame
 )
-from .calculator import calculate_down_payment
+from .calculator import calculate_down_payment, calculate_time_to_save
 
 class MortgageCalculatorApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Mortgage Down Payment Calculator")
-        self.setGeometry(100, 100, 400, 400)
+        self.setGeometry(100, 100, 400, 600)
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -81,6 +81,69 @@ class MortgageCalculatorApp(QMainWindow):
 
         self.layout.addLayout(form_layout)
 
+        # Separator
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
+        self.layout.addWidget(line)
+
+        savings_header = QLabel("Time to Save for Down Payment")
+        savings_header.setStyleSheet("font-weight: bold; margin-top: 5px;")
+        self.layout.addWidget(savings_header)
+
+        savings_form_layout = QFormLayout()
+
+        self.current_savings_input = QDoubleSpinBox()
+        self.current_savings_input.setRange(0, 10_000_000)
+        self.current_savings_input.setValue(20_000)
+        self.current_savings_input.setPrefix("$ ")
+        self.current_savings_input.setGroupSeparatorShown(True)
+
+        self.checking_account_input = QDoubleSpinBox()
+        self.checking_account_input.setRange(0, 10_000_000)
+        self.checking_account_input.setValue(5_000)
+        self.checking_account_input.setPrefix("$ ")
+        self.checking_account_input.setGroupSeparatorShown(True)
+
+        self.savings_rate_input = QDoubleSpinBox()
+        self.savings_rate_input.setRange(0, 100)
+        self.savings_rate_input.setValue(4.5)
+        self.savings_rate_input.setSuffix(" %")
+
+        self.monthly_paycheck_input = QDoubleSpinBox()
+        self.monthly_paycheck_input.setRange(0, 1_000_000)
+        self.monthly_paycheck_input.setValue(5000)
+        self.monthly_paycheck_input.setPrefix("$ ")
+        self.monthly_paycheck_input.setGroupSeparatorShown(True)
+
+        self.monthly_dividend_input = QDoubleSpinBox()
+        self.monthly_dividend_input.setRange(0, 1_000_000)
+        self.monthly_dividend_input.setValue(100)
+        self.monthly_dividend_input.setPrefix("$ ")
+        self.monthly_dividend_input.setGroupSeparatorShown(True)
+
+        self.other_income_input = QDoubleSpinBox()
+        self.other_income_input.setRange(0, 1_000_000)
+        self.other_income_input.setValue(0)
+        self.other_income_input.setPrefix("$ ")
+        self.other_income_input.setGroupSeparatorShown(True)
+
+        self.monthly_expenses_input = QDoubleSpinBox()
+        self.monthly_expenses_input.setRange(0, 1_000_000)
+        self.monthly_expenses_input.setValue(3000)
+        self.monthly_expenses_input.setPrefix("$ ")
+        self.monthly_expenses_input.setGroupSeparatorShown(True)
+
+        savings_form_layout.addRow("Current Savings:", self.current_savings_input)
+        savings_form_layout.addRow("Current Checking Account:", self.checking_account_input)
+        savings_form_layout.addRow("Savings APY:", self.savings_rate_input)
+        savings_form_layout.addRow("Monthly Paycheck:", self.monthly_paycheck_input)
+        savings_form_layout.addRow("Monthly Dividend Income:", self.monthly_dividend_input)
+        savings_form_layout.addRow("Other Monthly Income:", self.other_income_input)
+        savings_form_layout.addRow("Monthly Expenses:", self.monthly_expenses_input)
+
+        self.layout.addLayout(savings_form_layout)
+
     def _create_results(self):
         self.calculate_button = QPushButton("Calculate Down Payment")
         self.layout.addWidget(self.calculate_button)
@@ -90,6 +153,9 @@ class MortgageCalculatorApp(QMainWindow):
 
         self.layout.addWidget(self.result_down_payment_label)
         self.layout.addWidget(self.result_down_payment_percentage_label)
+
+        self.result_time_to_save_label = QLabel("Time to save: -")
+        self.layout.addWidget(self.result_time_to_save_label)
 
     def _connect_signals(self):
         self.calculate_button.clicked.connect(self.perform_calculation)
@@ -129,7 +195,31 @@ class MortgageCalculatorApp(QMainWindow):
             self.result_down_payment_label.setText(f"Required Down Payment: ${down_payment:,.2f}")
             self.result_down_payment_percentage_label.setText(f"Required Down Payment %: {down_payment_percent:.2f}%")
 
+            # Calculate time to save
+            initial_savings = self.current_savings_input.value() + self.checking_account_input.value()
+            monthly_income = (
+                self.monthly_paycheck_input.value() +
+                self.monthly_dividend_input.value() +
+                self.other_income_input.value()
+            )
+            monthly_contribution = monthly_income - self.monthly_expenses_input.value()
+
+            if down_payment > 0:
+                time_to_save_months = calculate_time_to_save(
+                    target_savings=down_payment,
+                    initial_savings=initial_savings,
+                    monthly_contribution=monthly_contribution,
+                    annual_interest_rate=self.savings_rate_input.value()
+                )
+                years = time_to_save_months // 12
+                months = time_to_save_months % 12
+                self.result_time_to_save_label.setText(f"Time to save: {years} years, {months} months")
+            else:
+                self.result_time_to_save_label.setText("Time to save: Not applicable (no down payment needed)")
+
+
         except ValueError as e:
             QMessageBox.warning(self, "Calculation Error", str(e))
             self.result_down_payment_label.setText("Required Down Payment: -")
             self.result_down_payment_percentage_label.setText("Required Down Payment %: -")
+            self.result_time_to_save_label.setText("Time to save: -")
