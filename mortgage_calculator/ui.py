@@ -60,6 +60,12 @@ class MortgageCalculatorApp(QMainWindow):
         self.hoa_fees_input.setPrefix("$ ")
         self.hoa_fees_input.setGroupSeparatorShown(True)
 
+        self.closing_costs_input = QDoubleSpinBox()
+        self.closing_costs_input.setRange(0, 1_000_000)
+        self.closing_costs_input.setValue(10000)
+        self.closing_costs_input.setPrefix("$ ")
+        self.closing_costs_input.setGroupSeparatorShown(True)
+
         self.pmi_rate_input = QDoubleSpinBox()
         self.pmi_rate_input.setRange(0, 10)
         self.pmi_rate_input.setValue(0.5)
@@ -77,6 +83,7 @@ class MortgageCalculatorApp(QMainWindow):
 
         form_layout.addRow("Home Insurance (Annual):", self.home_insurance_input)
         form_layout.addRow("HOA Fees (Monthly):", self.hoa_fees_input)
+        form_layout.addRow("Closing Costs:", self.closing_costs_input)
         form_layout.addRow("PMI Rate (Annual):", self.pmi_rate_input)
 
         self.layout.addLayout(form_layout)
@@ -154,6 +161,9 @@ class MortgageCalculatorApp(QMainWindow):
         self.layout.addWidget(self.result_down_payment_label)
         self.layout.addWidget(self.result_down_payment_percentage_label)
 
+        self.savings_status_label = QLabel("Savings Status: -")
+        self.layout.addWidget(self.savings_status_label)
+
         self.result_time_to_save_label = QLabel("Time to save: -")
         self.layout.addWidget(self.result_time_to_save_label)
 
@@ -195,8 +205,22 @@ class MortgageCalculatorApp(QMainWindow):
             self.result_down_payment_label.setText(f"Required Down Payment: ${down_payment:,.2f}")
             self.result_down_payment_percentage_label.setText(f"Required Down Payment %: {down_payment_percent:.2f}%")
 
-            # Calculate time to save
+            # Calculate savings status and time to save
+            closing_costs = self.closing_costs_input.value()
+            total_needed = down_payment + closing_costs
             initial_savings = self.current_savings_input.value() + self.checking_account_input.value()
+            savings_difference = total_needed - initial_savings
+
+            if savings_difference > 0:
+                percentage_left = (savings_difference / total_needed) * 100 if total_needed > 0 else 0
+                self.savings_status_label.setText(
+                    f"Savings Status: ${savings_difference:,.2f} left to save ({percentage_left:.2f}%)"
+                )
+            else:
+                self.savings_status_label.setText(
+                    f"Savings Status: ${abs(savings_difference):,.2f} over your goal!"
+                )
+
             monthly_income = (
                 self.monthly_paycheck_input.value() +
                 self.monthly_dividend_input.value() +
@@ -204,9 +228,9 @@ class MortgageCalculatorApp(QMainWindow):
             )
             monthly_contribution = monthly_income - self.monthly_expenses_input.value()
 
-            if down_payment > 0:
+            if total_needed > 0:
                 time_to_save_months = calculate_time_to_save(
-                    target_savings=down_payment,
+                    target_savings=total_needed,
                     initial_savings=initial_savings,
                     monthly_contribution=monthly_contribution,
                     annual_interest_rate=self.savings_rate_input.value()
@@ -215,11 +239,12 @@ class MortgageCalculatorApp(QMainWindow):
                 months = time_to_save_months % 12
                 self.result_time_to_save_label.setText(f"Time to save: {years} years, {months} months")
             else:
-                self.result_time_to_save_label.setText("Time to save: Not applicable (no down payment needed)")
+                self.result_time_to_save_label.setText("Time to save: Not applicable (no savings needed)")
 
 
         except ValueError as e:
             QMessageBox.warning(self, "Calculation Error", str(e))
             self.result_down_payment_label.setText("Required Down Payment: -")
             self.result_down_payment_percentage_label.setText("Required Down Payment %: -")
+            self.savings_status_label.setText("Savings Status: -")
             self.result_time_to_save_label.setText("Time to save: -")
