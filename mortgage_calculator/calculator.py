@@ -82,4 +82,11 @@ def calculate_down_payment(
 
     down_payment_percentage_with_pmi = (down_payment_with_pmi / home_price) * 100
 
+    # If the calculation including PMI results in a down payment of 20% or more,
+    # it means the target payment can be met or beaten with exactly a 20% down payment,
+    # thus avoiding PMI.
+    if down_payment_percentage_with_pmi >= 20:
+        down_payment_at_20_percent = home_price * 0.20
+        return down_payment_at_20_percent, 20.0
+
     return down_payment_with_pmi, down_payment_percentage_with_pmi
