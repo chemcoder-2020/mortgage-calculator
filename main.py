@@ -9,9 +9,9 @@ def down_payment_calculator_tab():
     """UI and logic for the down payment calculator tab."""
     with st.form(key="down_payment_form"):
         st.header("Mortgage Details")
-        home_price = st.number_input("Home Price:", min_value=0.0, value=500_000.0, step=1000.0, format="$%.2f")
-        target_monthly_payment = st.number_input("Target Monthly Payment:", min_value=0.0, value=3000.0, step=100.0, format="$%.2f")
-        interest_rate = st.number_input("Interest Rate (Annual):", min_value=0.0, max_value=100.0, value=7.0, step=0.1, format="%.2f %%")
+        home_price = st.number_input("Home Price:", min_value=0.0, value=500_000.0, step=1000.0, format="%.2f")
+        target_monthly_payment = st.number_input("Target Monthly Payment:", min_value=0.0, value=3000.0, step=100.0, format="%.2f")
+        interest_rate = st.number_input("Interest Rate (Annual):", min_value=0.0, max_value=100.0, value=7.0, step=0.1, format="%.2f")
         loan_term_years = st.selectbox("Loan Term (Years):", options=[30, 20, 15, 10], index=0)
 
         col1, col2 = st.columns(2)
@@ -20,19 +20,19 @@ def down_payment_calculator_tab():
         with col2:
             property_tax_type = st.selectbox("Tax Type", options=["%", "$"], index=0, label_visibility="collapsed")
 
-        home_insurance = st.number_input("Home Insurance (Annual):", min_value=0.0, value=1200.0, step=100.0, format="$%.2f")
-        hoa_fees = st.number_input("HOA Fees (Monthly):", min_value=0.0, value=50.0, step=10.0, format="$%.2f")
-        pmi_rate = st.number_input("PMI Rate (Annual):", min_value=0.0, max_value=10.0, value=0.5, step=0.01, format="%.2f %%")
+        home_insurance = st.number_input("Home Insurance (Annual):", min_value=0.0, value=1200.0, step=100.0, format="%.2f")
+        hoa_fees = st.number_input("HOA Fees (Monthly):", min_value=0.0, value=50.0, step=10.0, format="%.2f")
+        pmi_rate = st.number_input("PMI Rate (Annual):", min_value=0.0, max_value=10.0, value=0.5, step=0.01, format="%.2f")
 
         st.header("Savings Details")
-        closing_costs = st.number_input("Closing Costs:", min_value=0.0, value=10000.0, step=500.0, format="$%.2f")
-        current_savings = st.number_input("Current Savings:", min_value=0.0, value=20_000.0, step=1000.0, format="$%.2f")
-        checking_account = st.number_input("Current Checking Account:", min_value=0.0, value=5_000.0, step=1000.0, format="$%.2f")
-        savings_rate = st.number_input("Savings APY:", min_value=0.0, max_value=100.0, value=4.5, step=0.1, format="%.2f %%")
-        monthly_paycheck = st.number_input("Monthly Paycheck:", min_value=0.0, value=5000.0, step=100.0, format="$%.2f")
-        monthly_dividend = st.number_input("Monthly Dividend Income:", min_value=0.0, value=100.0, step=10.0, format="$%.2f")
-        other_income = st.number_input("Other Monthly Income:", min_value=0.0, value=0.0, step=10.0, format="$%.2f")
-        monthly_expenses = st.number_input("Monthly Expenses:", min_value=0.0, value=3000.0, step=100.0, format="$%.2f")
+        closing_costs = st.number_input("Closing Costs:", min_value=0.0, value=10000.0, step=500.0, format="%.2f")
+        current_savings = st.number_input("Current Savings:", min_value=0.0, value=20_000.0, step=1000.0, format="%.2f")
+        checking_account = st.number_input("Current Checking Account:", min_value=0.0, value=5_000.0, step=1000.0, format="%.2f")
+        savings_rate = st.number_input("Savings APY:", min_value=0.0, max_value=100.0, value=4.5, step=0.1, format="%.2f")
+        monthly_paycheck = st.number_input("Monthly Paycheck:", min_value=0.0, value=5000.0, step=100.0, format="%.2f")
+        monthly_dividend = st.number_input("Monthly Dividend Income:", min_value=0.0, value=100.0, step=10.0, format="%.2f")
+        other_income = st.number_input("Other Monthly Income:", min_value=0.0, value=0.0, step=10.0, format="%.2f")
+        monthly_expenses = st.number_input("Monthly Expenses:", min_value=0.0, value=3000.0, step=100.0, format="%.2f")
 
         submit_button = st.form_submit_button(label="Calculate Down Payment")
 
@@ -94,15 +94,15 @@ def refinance_calculator_tab():
         st.header("Refinance Details")
         
         st.subheader("Original Loan")
-        refi_orig_amount = st.number_input("Original Loan Amount:", min_value=0.0, value=300_000.0, step=1000.0, format="$%.2f")
-        refi_orig_rate = st.number_input("Original Interest Rate:", min_value=0.0, max_value=100.0, value=6.5, step=0.1, format="%.2f %%")
+        refi_orig_amount = st.number_input("Original Loan Amount:", min_value=0.0, value=300_000.0, step=1000.0, format="%.2f")
+        refi_orig_rate = st.number_input("Original Interest Rate:", min_value=0.0, max_value=100.0, value=6.5, step=0.1, format="%.2f")
         refi_orig_term = st.selectbox("Original Loan Term (Years):", options=[30, 20, 15, 10], index=0, key="refi_orig_term")
         refi_months_paid = st.number_input("Months Already Paid:", min_value=0, value=24, step=1)
 
         st.subheader("New Loan")
-        refi_new_rate = st.number_input("New Interest Rate:", min_value=0.0, max_value=100.0, value=5.5, step=0.1, format="%.2f %%")
+        refi_new_rate = st.number_input("New Interest Rate:", min_value=0.0, max_value=100.0, value=5.5, step=0.1, format="%.2f")
         refi_new_term = st.selectbox("New Loan Term (Years):", options=[30, 20, 15, 10], index=0, key="refi_new_term")
-        refi_closing_costs = st.number_input("Refinance Closing Costs:", min_value=0.0, value=5000.0, step=100.0, format="$%.2f")
+        refi_closing_costs = st.number_input("Refinance Closing Costs:", min_value=0.0, value=5000.0, step=100.0, format="%.2f")
 
         submit_button = st.form_submit_button(label="Calculate Refinance Savings")
 
