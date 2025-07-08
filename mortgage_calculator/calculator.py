@@ -145,3 +145,82 @@ def calculate_time_to_save(
         raise ValueError("Calculation failed. Please check savings parameters.")
 
     return math.ceil(months)
+
+
+def _calculate_monthly_pi(principal, annual_rate_percent, term_years):
+    """Helper to calculate principal and interest payment."""
+    if principal <= 0:
+        return 0
+    monthly_rate = annual_rate_percent / 100 / 12
+    num_payments = term_years * 12
+
+    if num_payments == 0:
+        raise ValueError("Loan term cannot be zero years.")
+
+    if monthly_rate == 0:
+        return principal / num_payments
+
+    payment = principal * (monthly_rate * (1 + monthly_rate) ** num_payments) / ((1 + monthly_rate) ** num_payments - 1)
+    return payment
+
+def calculate_refinance_details(
+    original_loan_amount: float,
+    original_interest_rate: float,
+    original_loan_term_years: int,
+    months_paid: int,
+    new_interest_rate: float,
+    new_loan_term_years: int,
+    refinance_closing_costs: float,
+) -> dict:
+    """
+    Calculates the details of a mortgage refinance.
+
+    Returns:
+        A dictionary with refinance details.
+    """
+    # 1. Original loan details
+    original_monthly_rate = original_interest_rate / 100 / 12
+    original_num_payments = original_loan_term_years * 12
+    original_monthly_payment = _calculate_monthly_pi(
+        original_loan_amount, original_interest_rate, original_loan_term_years
+    )
+
+    # 2. Remaining balance
+    remaining_payments = original_num_payments - months_paid
+    if remaining_payments <= 0:
+        remaining_balance = 0.0
+    else:
+        if original_monthly_rate > 0:
+            # Formula for remaining balance
+            remaining_balance = original_loan_amount * (
+                ((1 + original_monthly_rate) ** original_num_payments) -
+                ((1 + original_monthly_rate) ** months_paid)
+            ) / (((1 + original_monthly_rate) ** original_num_payments) - 1)
+        else:  # 0 interest
+            remaining_balance = original_loan_amount * (remaining_payments / original_num_payments)
+
+    # 3. New loan details
+    new_loan_amount = remaining_balance + refinance_closing_costs
+    new_monthly_payment = _calculate_monthly_pi(
+        new_loan_amount, new_interest_rate, new_loan_term_years
+    )
+
+    # 4. Savings and break-even
+    monthly_savings = original_monthly_payment - new_monthly_payment
+    break_even_months = refinance_closing_costs / monthly_savings if monthly_savings > 0 else float('inf')
+
+    # 5. Lifetime savings
+    total_to_pay_original = original_monthly_payment * remaining_payments
+    
+    new_num_payments = new_loan_term_years * 12
+    total_to_pay_refinanced = new_monthly_payment * new_num_payments
+    
+    lifetime_savings = total_to_pay_original - total_to_pay_refinanced
+
+    return {
+        "original_monthly_payment": original_monthly_payment,
+        "new_monthly_payment": new_monthly_payment,
+        "monthly_savings": monthly_savings,
+        "break_even_months": break_even_months,
+        "lifetime_savings": lifetime_savings,
+    }
