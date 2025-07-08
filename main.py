@@ -54,7 +54,7 @@ def down_payment_calculator_tab():
                 pmi_rate=pmi_rate,
             )
 
-            st.success(f"**Required Down Payment: ${down_payment:,.2f}** ({down_payment_percent:.2f}%)")
+            st.success(f"**Required Down Payment: $**{down_payment:,.2f}** ({down_payment_percent:.2f}%)")
 
             total_needed = down_payment + closing_costs
             initial_savings = current_savings + checking_account
@@ -62,9 +62,9 @@ def down_payment_calculator_tab():
 
             if savings_difference > 0:
                 percentage_left = (savings_difference / total_needed) * 100 if total_needed > 0 else 0
-                st.info(f"**Savings Status:** You have **${initial_savings:,.2f}** saved. You need **${total_needed:,.2f}** for the down payment and closing costs. You have **${savings_difference:,.2f}** left to save ({percentage_left:.2f}%).")
+                st.info(f"**Savings Status:** You have $**{initial_savings:,.2f}** saved. You need $**{total_needed:,.2f}** for the down payment and closing costs. You have $**{savings_difference:,.2f}** left to save ({percentage_left:.2f}%).")
             else:
-                st.success(f"**Savings Status:** You have **${initial_savings:,.2f}** saved, which is **${abs(savings_difference):,.2f}** over your goal of **${total_needed:,.2f}**!")
+                st.success(f"**Savings Status:** You have $**{initial_savings:,.2f}** saved, which is $**{abs(savings_difference):,.2f}** over your goal of $**{total_needed:,.2f}**!")
 
             monthly_income = monthly_paycheck + monthly_dividend + other_income
             monthly_contribution = monthly_income - monthly_expenses
@@ -81,7 +81,7 @@ def down_payment_calculator_tab():
                     )
                     years = time_to_save_months // 12
                     months = time_to_save_months % 12
-                    st.info(f"**Time to save:** With a monthly contribution of **${monthly_contribution:,.2f}**, it will take you **{years} years and {months} months** to save for your down payment and closing costs.")
+                    st.info(f"**Time to save:** With a monthly contribution of $**{monthly_contribution:,.2f}**, it will take you **{years} years and {months} months** to save for your down payment and closing costs.")
             else:
                 st.success("**Time to save:** You already have enough saved for your down payment and closing costs!")
 
@@ -135,9 +135,9 @@ def refinance_calculator_tab():
 
             lifetime_savings = results['lifetime_savings']
             if lifetime_savings >= 0:
-                st.success(f"**Lifetime Savings:** ${lifetime_savings:,.2f}")
+                st.success(f"**Lifetime Savings:** $**{lifetime_savings:,.2f}**")
             else:
-                st.error(f"**Lifetime Loss:** ${abs(lifetime_savings):,.2f}")
+                st.error(f"**Lifetime Loss:** $**{abs(lifetime_savings):,.2f}**")
 
         except ValueError as e:
             st.error(f"Calculation Error: {e}")
