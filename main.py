@@ -62,9 +62,9 @@ def down_payment_calculator_tab():
 
             if savings_difference > 0:
                 percentage_left = (savings_difference / total_needed) * 100 if total_needed > 0 else 0
-                st.info(f"**Savings Status:** You have $**{initial_savings:,.2f}** saved. You need $**{total_needed:,.2f}** for the down payment and closing costs. You have $**{savings_difference:,.2f}** left to save ({percentage_left:.2f}%).")
+                st.info(rf"**Savings Status:** You have \$**{initial_savings:,.2f}** saved. You need \$**{total_needed:,.2f}** for the down payment and closing costs. You have \$**{savings_difference:,.2f}** left to save ({percentage_left:.2f}%).")
             else:
-                st.success(f"**Savings Status:** You have $**{initial_savings:,.2f}** saved, which is $**{abs(savings_difference):,.2f}** over your goal of $**{total_needed:,.2f}**!")
+                st.success(rf"**Savings Status:** You have \$**{initial_savings:,.2f}** saved, which is \$**{abs(savings_difference):,.2f}** over your goal of \$**{total_needed:,.2f}**!")
 
             monthly_income = monthly_paycheck + monthly_dividend + other_income
             monthly_contribution = monthly_income - monthly_expenses
