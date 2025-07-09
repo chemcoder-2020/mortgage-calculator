@@ -5,6 +5,7 @@ from mortgage_calculator.calculator import (
     calculate_time_to_save,
     calculate_refinance_details,
     calculate_amortization_schedule,
+    calculate_paydown_vs_invest,
 )
 
 def down_payment_calculator_tab():
@@ -38,6 +39,7 @@ def down_payment_calculator_tab():
 
         st.header("Amortization Details")
         additional_principal = st.number_input("Additional Monthly Principal:", min_value=0.0, value=0.0, step=50.0, format="%.2f")
+        investment_rate = st.number_input("Investment Return Rate (Annual %):", min_value=0.0, value=10.0, step=0.5, format="%.1f", help="Average annual return for investing the additional principal instead of paying down the mortgage.")
 
         submit_button = st.form_submit_button(label="Calculate Down Payment")
 
@@ -92,14 +94,32 @@ def down_payment_calculator_tab():
 
             loan_amount = home_price - down_payment
             if loan_amount > 0:
+                if additional_principal > 0:
+                    st.subheader("Extra Payments: Pay Down Mortgage vs. Invest")
+                    comparison = calculate_paydown_vs_invest(
+                        loan_amount=loan_amount,
+                        annual_interest_rate=interest_rate,
+                        loan_term_years=loan_term_years,
+                        additional_principal_payment=additional_principal,
+                        investment_annual_rate=investment_rate,
+                    )
+                    col1, col2 = st.columns(2)
+                    col1.metric("Interest Saved by Pre-paying", f"${comparison['interest_saved']:,.2f}")
+                    col2.metric(f"Gains from Investing at {investment_rate}%", f"${comparison['investment_gains']:,.2f}")
+
+                    if comparison['investment_gains'] > comparison['interest_saved']:
+                        st.success(f"Investing the extra payments could be more profitable by **${comparison['investment_gains'] - comparison['interest_saved']:,.2f}**.")
+                    else:
+                        st.info(f"Paying down the mortgage could be more beneficial by **${comparison['interest_saved'] - comparison['investment_gains']:,.2f}**.")
+
                 with st.expander("View Amortization Schedule"):
-                    amortization_schedule = calculate_amortization_schedule(
+                    amortization_data = calculate_amortization_schedule(
                         loan_amount=loan_amount,
                         annual_interest_rate=interest_rate,
                         loan_term_years=loan_term_years,
                         additional_principal_payment=additional_principal,
                     )
-                    df_schedule = pd.DataFrame(amortization_schedule)
+                    df_schedule = pd.DataFrame(amortization_data["schedule"])
                     # Formatting the columns for display
                     for col in ["Monthly Payment", "Principal", "Interest", "Remaining Balance"]:
                         df_schedule[col] = df_schedule[col].map("${:,.2f}".format)
@@ -124,6 +144,7 @@ def refinance_calculator_tab():
         refi_new_term = st.selectbox("New Loan Term (Years):", options=[30, 20, 15, 10], index=0, key="refi_new_term")
         refi_closing_costs = st.number_input("Refinance Closing Costs:", min_value=0.0, value=5000.0, step=100.0, format="%.2f")
         refi_additional_principal = st.number_input("Additional Monthly Principal (New Loan):", min_value=0.0, value=0.0, step=50.0, format="%.2f")
+        refi_investment_rate = st.number_input("Investment Return Rate (Annual %):", min_value=0.0, value=10.0, step=0.5, format="%.1f", help="Average annual return for investing the additional principal instead of paying down the new loan.", key="refi_invest_rate")
 
         submit_button = st.form_submit_button(label="Calculate Refinance Savings")
 
@@ -160,6 +181,24 @@ def refinance_calculator_tab():
                 st.success(f"**Lifetime Savings:** $**{lifetime_savings:,.2f}**")
             else:
                 st.error(f"**Lifetime Loss:** $**{abs(lifetime_savings):,.2f}**")
+
+            if refi_additional_principal > 0:
+                st.subheader("Extra Payments: Pay Down New Loan vs. Invest")
+                comparison = calculate_paydown_vs_invest(
+                    loan_amount=results["new_loan_amount"],
+                    annual_interest_rate=refi_new_rate,
+                    loan_term_years=refi_new_term,
+                    additional_principal_payment=refi_additional_principal,
+                    investment_annual_rate=refi_investment_rate,
+                )
+                col1, col2 = st.columns(2)
+                col1.metric("Interest Saved by Pre-paying", f"${comparison['interest_saved']:,.2f}")
+                col2.metric(f"Gains from Investing at {refi_investment_rate}%", f"${comparison['investment_gains']:,.2f}")
+
+                if comparison['investment_gains'] > comparison['interest_saved']:
+                    st.success(f"Investing the extra payments could be more profitable by **${comparison['investment_gains'] - comparison['interest_saved']:,.2f}**.")
+                else:
+                    st.info(f"Paying down the new loan could be more beneficial by **${comparison['interest_saved'] - comparison['investment_gains']:,.2f}**.")
 
             if results["amortization_schedule"]:
                 with st.expander("View New Loan Amortization Schedule"):

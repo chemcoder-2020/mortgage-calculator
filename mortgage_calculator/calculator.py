@@ -169,7 +169,7 @@ def calculate_amortization_schedule(
     annual_interest_rate: float,
     loan_term_years: int,
     additional_principal_payment: float = 0.0,
-) -> list[dict]:
+) -> dict:
     """
     Calculates the amortization schedule for a loan.
 
@@ -180,13 +180,13 @@ def calculate_amortization_schedule(
         additional_principal_payment: Extra amount paid towards principal each month.
 
     Returns:
-        A list of dictionaries, where each dictionary represents a month's payment details.
+        A dictionary containing the amortization schedule, total interest paid, and months to payoff.
     """
     monthly_interest_rate = annual_interest_rate / 100 / 12
     num_payments = loan_term_years * 12
 
     if loan_amount <= 0:
-        return []
+        return {"schedule": [], "total_interest_paid": 0, "months_to_payoff": 0}
 
     monthly_payment = _calculate_monthly_pi(
         loan_amount, annual_interest_rate, loan_term_years
@@ -195,6 +195,7 @@ def calculate_amortization_schedule(
     remaining_balance = loan_amount
     schedule = []
     month = 0
+    total_interest_paid = 0.0
 
     while remaining_balance > 0:
         month += 1
@@ -203,6 +204,7 @@ def calculate_amortization_schedule(
             break
 
         interest_payment = remaining_balance * monthly_interest_rate
+        total_interest_paid += interest_payment
 
         principal_paid = (monthly_payment - interest_payment) + additional_principal_payment
         total_payment = monthly_payment + additional_principal_payment
@@ -225,7 +227,71 @@ def calculate_amortization_schedule(
             }
         )
 
-    return schedule
+    return {
+        "schedule": schedule,
+        "total_interest_paid": total_interest_paid,
+        "months_to_payoff": month,
+    }
+
+
+def calculate_investment_growth(
+    monthly_investment: float,
+    annual_rate: float,
+    months: int,
+) -> float:
+    """Calculates the future value of a series of monthly investments."""
+    if monthly_investment <= 0 or months <= 0:
+        return 0.0
+    monthly_rate = annual_rate / 100 / 12
+    if monthly_rate == 0:
+        return monthly_investment * months
+    # FV of an annuity due
+    future_value = monthly_investment * (((1 + monthly_rate) ** months - 1) / monthly_rate) * (1 + monthly_rate)
+    return future_value
+
+
+def calculate_paydown_vs_invest(
+    loan_amount: float,
+    annual_interest_rate: float,
+    loan_term_years: int,
+    additional_principal_payment: float,
+    investment_annual_rate: float,
+) -> dict:
+    """
+    Compares paying down a mortgage vs. investing the extra payment.
+
+    Returns:
+        A dictionary with the comparison details.
+    """
+    if additional_principal_payment <= 0:
+        return {"interest_saved": 0, "investment_gains": 0}
+
+    # Scenario 1: Pay down mortgage with extra payments
+    amort_with_extra = calculate_amortization_schedule(
+        loan_amount, annual_interest_rate, loan_term_years, additional_principal_payment
+    )
+    interest_paid_with_extra = amort_with_extra["total_interest_paid"]
+    months_to_payoff_with_extra = amort_with_extra["months_to_payoff"]
+
+    # Scenario 2: Standard mortgage payments (investing the extra)
+    amort_without_extra = calculate_amortization_schedule(
+        loan_amount, annual_interest_rate, loan_term_years, 0.0
+    )
+    interest_paid_without_extra = amort_without_extra["total_interest_paid"]
+
+    interest_saved = interest_paid_without_extra - interest_paid_with_extra
+
+    # Calculate investment growth over the shorter payoff period
+    investment_gains = calculate_investment_growth(
+        monthly_investment=additional_principal_payment,
+        annual_rate=investment_annual_rate,
+        months=months_to_payoff_with_extra,
+    )
+
+    return {
+        "interest_saved": interest_saved,
+        "investment_gains": investment_gains,
+    }
 
 
 def calculate_refinance_details(
@@ -278,13 +344,14 @@ def calculate_refinance_details(
     # 5. Lifetime savings
     total_to_pay_original = original_monthly_payment * remaining_payments
 
-    new_loan_amortization = calculate_amortization_schedule(
+    new_loan_amortization_data = calculate_amortization_schedule(
         loan_amount=new_loan_amount,
         annual_interest_rate=new_interest_rate,
         loan_term_years=new_loan_term_years,
         additional_principal_payment=additional_principal_payment,
     )
 
+    new_loan_amortization = new_loan_amortization_data["schedule"]
     total_to_pay_refinanced = sum(p["Monthly Payment"] for p in new_loan_amortization) if new_loan_amortization else 0
     lifetime_savings = total_to_pay_original - total_to_pay_refinanced
 
@@ -295,4 +362,5 @@ def calculate_refinance_details(
         "break_even_months": break_even_months,
         "lifetime_savings": lifetime_savings,
         "amortization_schedule": new_loan_amortization,
+        "new_loan_amount": new_loan_amount,
     }
