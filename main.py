@@ -36,6 +36,9 @@ def down_payment_calculator_tab():
         other_income = st.number_input("Other Monthly Income:", min_value=0.0, value=0.0, step=10.0, format="%.2f")
         monthly_expenses = st.number_input("Monthly Expenses:", min_value=0.0, value=3000.0, step=100.0, format="%.2f")
 
+        st.header("Amortization Details")
+        additional_principal = st.number_input("Additional Monthly Principal:", min_value=0.0, value=0.0, step=50.0, format="%.2f")
+
         submit_button = st.form_submit_button(label="Calculate Down Payment")
 
     if submit_button:
@@ -94,6 +97,7 @@ def down_payment_calculator_tab():
                         loan_amount=loan_amount,
                         annual_interest_rate=interest_rate,
                         loan_term_years=loan_term_years,
+                        additional_principal_payment=additional_principal,
                     )
                     df_schedule = pd.DataFrame(amortization_schedule)
                     # Formatting the columns for display
@@ -119,6 +123,7 @@ def refinance_calculator_tab():
         refi_new_rate = st.number_input("New Interest Rate:", min_value=0.0, max_value=100.0, value=5.5, step=0.1, format="%.2f")
         refi_new_term = st.selectbox("New Loan Term (Years):", options=[30, 20, 15, 10], index=0, key="refi_new_term")
         refi_closing_costs = st.number_input("Refinance Closing Costs:", min_value=0.0, value=5000.0, step=100.0, format="%.2f")
+        refi_additional_principal = st.number_input("Additional Monthly Principal (New Loan):", min_value=0.0, value=0.0, step=50.0, format="%.2f")
 
         submit_button = st.form_submit_button(label="Calculate Refinance Savings")
 
@@ -132,6 +137,7 @@ def refinance_calculator_tab():
                 new_interest_rate=refi_new_rate,
                 new_loan_term_years=refi_new_term,
                 refinance_closing_costs=refi_closing_costs,
+                additional_principal_payment=refi_additional_principal,
             )
 
             st.metric(label="Original Monthly Payment", value=f"${results['original_monthly_payment']:,.2f}")

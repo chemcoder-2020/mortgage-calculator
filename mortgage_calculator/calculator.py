@@ -168,6 +168,7 @@ def calculate_amortization_schedule(
     loan_amount: float,
     annual_interest_rate: float,
     loan_term_years: int,
+    additional_principal_payment: float = 0.0,
 ) -> list[dict]:
     """
     Calculates the amortization schedule for a loan.
@@ -176,6 +177,7 @@ def calculate_amortization_schedule(
         loan_amount: The total amount of the loan.
         annual_interest_rate: The annual interest rate (as a percentage).
         loan_term_years: The term of the loan in years.
+        additional_principal_payment: Extra amount paid towards principal each month.
 
     Returns:
         A list of dictionaries, where each dictionary represents a month's payment details.
@@ -192,22 +194,32 @@ def calculate_amortization_schedule(
 
     remaining_balance = loan_amount
     schedule = []
+    month = 0
 
-    for month in range(1, num_payments + 1):
+    while remaining_balance > 0:
+        month += 1
+        # Safety break to prevent infinite loops
+        if month > num_payments * 2:
+            break
+
         interest_payment = remaining_balance * monthly_interest_rate
-        principal_payment = monthly_payment - interest_payment
-        remaining_balance -= principal_payment
 
-        # Ensure remaining balance doesn't go negative on the last payment
-        if remaining_balance < 0:
-            principal_payment += remaining_balance  # Adjust last principal payment
+        principal_paid = (monthly_payment - interest_payment) + additional_principal_payment
+        total_payment = monthly_payment + additional_principal_payment
+
+        if remaining_balance <= principal_paid:
+            # This is the final payment
+            total_payment = remaining_balance + interest_payment
+            principal_paid = remaining_balance
             remaining_balance = 0
+        else:
+            remaining_balance -= principal_paid
 
         schedule.append(
             {
                 "Month": month,
-                "Monthly Payment": monthly_payment,
-                "Principal": principal_payment,
+                "Monthly Payment": total_payment,
+                "Principal": principal_paid,
                 "Interest": interest_payment,
                 "Remaining Balance": remaining_balance,
             }
@@ -224,6 +236,7 @@ def calculate_refinance_details(
     new_interest_rate: float,
     new_loan_term_years: int,
     refinance_closing_costs: float,
+    additional_principal_payment: float = 0.0,
 ) -> dict:
     """
     Calculates the details of a mortgage refinance.
@@ -264,17 +277,16 @@ def calculate_refinance_details(
 
     # 5. Lifetime savings
     total_to_pay_original = original_monthly_payment * remaining_payments
-    
-    new_num_payments = new_loan_term_years * 12
-    total_to_pay_refinanced = new_monthly_payment * new_num_payments
-    
-    lifetime_savings = total_to_pay_original - total_to_pay_refinanced
 
     new_loan_amortization = calculate_amortization_schedule(
         loan_amount=new_loan_amount,
         annual_interest_rate=new_interest_rate,
         loan_term_years=new_loan_term_years,
+        additional_principal_payment=additional_principal_payment,
     )
+
+    total_to_pay_refinanced = sum(p["Monthly Payment"] for p in new_loan_amortization) if new_loan_amortization else 0
+    lifetime_savings = total_to_pay_original - total_to_pay_refinanced
 
     return {
         "original_monthly_payment": original_monthly_payment,
