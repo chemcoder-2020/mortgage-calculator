@@ -163,6 +163,59 @@ def _calculate_monthly_pi(principal, annual_rate_percent, term_years):
     payment = principal * (monthly_rate * (1 + monthly_rate) ** num_payments) / ((1 + monthly_rate) ** num_payments - 1)
     return payment
 
+
+def calculate_amortization_schedule(
+    loan_amount: float,
+    annual_interest_rate: float,
+    loan_term_years: int,
+) -> list[dict]:
+    """
+    Calculates the amortization schedule for a loan.
+
+    Args:
+        loan_amount: The total amount of the loan.
+        annual_interest_rate: The annual interest rate (as a percentage).
+        loan_term_years: The term of the loan in years.
+
+    Returns:
+        A list of dictionaries, where each dictionary represents a month's payment details.
+    """
+    monthly_interest_rate = annual_interest_rate / 100 / 12
+    num_payments = loan_term_years * 12
+
+    if loan_amount <= 0:
+        return []
+
+    monthly_payment = _calculate_monthly_pi(
+        loan_amount, annual_interest_rate, loan_term_years
+    )
+
+    remaining_balance = loan_amount
+    schedule = []
+
+    for month in range(1, num_payments + 1):
+        interest_payment = remaining_balance * monthly_interest_rate
+        principal_payment = monthly_payment - interest_payment
+        remaining_balance -= principal_payment
+
+        # Ensure remaining balance doesn't go negative on the last payment
+        if remaining_balance < 0:
+            principal_payment += remaining_balance  # Adjust last principal payment
+            remaining_balance = 0
+
+        schedule.append(
+            {
+                "Month": month,
+                "Monthly Payment": monthly_payment,
+                "Principal": principal_payment,
+                "Interest": interest_payment,
+                "Remaining Balance": remaining_balance,
+            }
+        )
+
+    return schedule
+
+
 def calculate_refinance_details(
     original_loan_amount: float,
     original_interest_rate: float,
@@ -217,10 +270,17 @@ def calculate_refinance_details(
     
     lifetime_savings = total_to_pay_original - total_to_pay_refinanced
 
+    new_loan_amortization = calculate_amortization_schedule(
+        loan_amount=new_loan_amount,
+        annual_interest_rate=new_interest_rate,
+        loan_term_years=new_loan_term_years,
+    )
+
     return {
         "original_monthly_payment": original_monthly_payment,
         "new_monthly_payment": new_monthly_payment,
         "monthly_savings": monthly_savings,
         "break_even_months": break_even_months,
         "lifetime_savings": lifetime_savings,
+        "amortization_schedule": new_loan_amortization,
     }

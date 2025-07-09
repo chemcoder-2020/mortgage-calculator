@@ -1,8 +1,10 @@
 import streamlit as st
+import pandas as pd
 from mortgage_calculator.calculator import (
     calculate_down_payment,
     calculate_time_to_save,
     calculate_refinance_details,
+    calculate_amortization_schedule,
 )
 
 def down_payment_calculator_tab():
@@ -85,6 +87,20 @@ def down_payment_calculator_tab():
             else:
                 st.success("**Time to save:** You already have enough saved for your down payment and closing costs!")
 
+            loan_amount = home_price - down_payment
+            if loan_amount > 0:
+                with st.expander("View Amortization Schedule"):
+                    amortization_schedule = calculate_amortization_schedule(
+                        loan_amount=loan_amount,
+                        annual_interest_rate=interest_rate,
+                        loan_term_years=loan_term_years,
+                    )
+                    df_schedule = pd.DataFrame(amortization_schedule)
+                    # Formatting the columns for display
+                    for col in ["Monthly Payment", "Principal", "Interest", "Remaining Balance"]:
+                        df_schedule[col] = df_schedule[col].map("${:,.2f}".format)
+                    st.dataframe(df_schedule.set_index("Month"))
+
         except ValueError as e:
             st.error(f"Calculation Error: {e}")
 
@@ -138,6 +154,14 @@ def refinance_calculator_tab():
                 st.success(f"**Lifetime Savings:** $**{lifetime_savings:,.2f}**")
             else:
                 st.error(f"**Lifetime Loss:** $**{abs(lifetime_savings):,.2f}**")
+
+            if results["amortization_schedule"]:
+                with st.expander("View New Loan Amortization Schedule"):
+                    df_schedule = pd.DataFrame(results["amortization_schedule"])
+                    # Formatting the columns for display
+                    for col in ["Monthly Payment", "Principal", "Interest", "Remaining Balance"]:
+                        df_schedule[col] = df_schedule[col].map("${:,.2f}".format)
+                    st.dataframe(df_schedule.set_index("Month"))
 
         except ValueError as e:
             st.error(f"Calculation Error: {e}")
